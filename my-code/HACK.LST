@@ -1,0 +1,215 @@
+Turbo Assembler	 Version 4.1	    02/27/25 15:38:44	    Page 1
+hack.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     org 100h
+      4
+      5	0100  E8 0071		     start:	 call	 intro
+      6
+      7	0103  B4 0A				 mov	 ah, 0ah
+      8	0105  BA 0114r				 mov	 dx, offset password
+      9	0108  CD 21				 int	 21h
+     10
+     11	010A  B4 09				 mov	 ah, 09h
+     12	010C  BA 02DAr				 mov	 dx, offset newstring
+     13	010F  CD 21				 int	 21h
+     14
+     15	0111  EB 09 90				 jmp	 data
+     16	0114  08*(24)		     password:	 db	 8 dup ('$')
+     17	011C			     data:
+     18	011C  BE 0114r				 mov	 si, offset password
+     19	011F  83 C6 02				 add	 si, 02h
+     20
+     21				     ;HASH
+     22	0122  B9 0008				 mov	 cx, 8h
+     23	0125  33 C0				 xor	 ax, ax
+     24	0127  33 D2				 xor	 dx, dx
+     25
+     26	0129  41		     full:	 inc	 cx
+     27	012A  51				 push	 cx
+     28	012B  B9 0003				 mov	 cx, 03h
+     29	012E  50				 push	 ax
+     30	012F  33 C0				 xor	 ax, ax				 ;null ax
+     31	0131  33 D2				 xor	 dx, dx
+     32
+     33	0133  AC		     next:	 lodsb					 ;symb code is in al
+     34
+     35	0134  3C 0D				 cmp	 al, 0Dh			 ;if end - enter
+     36	0136  74 1B				 je	 hashend
+     37
+     38	0138  B3 09				 mov	 bl, 09h
+     39	013A  F6 F3				 div	 bl				 ;remainder is in ah
+     40
+     41	013C  8A C4				 mov	 al, ah
+     42	013E  B4 00				 mov	 ah, 00h			 ;remainder is in al, so ax = 00XX
+     43
+     44	0140  92				 xchg	 dx, ax				 ;remainder is in dx, main dig in ax
+     45
+     46	0141  B3 0A				 mov	 bl, 10
+     47	0143  F6 E3				 mul	 bl				 ;new 0
+     48
+     49	0145  03 C2				 add	 ax, dx				 ;little sum
+     50	0147  92				 xchg	 ax, dx				 ;main dig is in dx
+     51
+     52	0148  E2 E9				 loop	 next
+     53
+     54	014A  58				 pop	 ax
+     55	014B  03 C2				 add	 ax, dx				 ;sum is in ax
+     56
+     57	014D  59				 pop	 cx
+Turbo Assembler	 Version 4.1	    02/27/25 15:38:44	    Page 2
+hack.asm
+
+
+
+     58	014E  83 E9 03				 sub	 cx, 03h
+     59	0151  E2 D6				 loop	 full
+     60
+     61	0153  58		     hashend:	 pop	 ax				 ;return stack
+     62	0154  03 C2				 add	 ax, dx
+     63	0156  92				 xchg	 ax, dx				 ;hash
+     64	0157  59				 pop	 cx
+     65
+     66	0158  B4 09				 mov	 ah, 09h
+     67
+     68	015A  81 FA 01CF			 cmp	 dx, 1cfh
+     69	015E  74 09				 je	 goodpass
+     70
+     71	0160  BA 0307r				 mov	 dx, offset wrong
+     72	0163  CD 21				 int	 21h
+     73
+     74	0165  B4 4C				 mov	 ah, 4ch
+     75	0167  CD 21				 int	 21h
+     76
+     77	0169  B4 09		     goodpass:	 mov	 ah, 09h
+     78	016B  BA 02DDr				 mov	 dx, offset right
+     79	016E  CD 21				 int	 21h
+     80
+     81	0170  B4 4C				 mov	 ah, 4ch
+     82	0172  CD 21				 int	 21h
+     83
+     84	0174			     intro	 proc
+     85
+     86	0174  B4 09				 mov	 ah, 09h
+     87	0176  BA 0181r				 mov	 dx, offset greetings
+     88	0179  CD 21				 int	 21h
+     89
+     90	017B  BA 02BDr				 mov	 dx, offset passrequest
+     91	017E  CD 21				 int	 21h
+     92
+     93	0180  C3				 ret
+     94	0181					 endp
+     95
+     96	0181  2A 2A 2A 2A 2A 2A	2A+  greetings:	     db	'*******************************************', 0Dh, 0Ah, '*		    +
+     97	      2A 2A 2A 2A 2A 2A	2A+  *', 0Dh, 0Ah, '*  If you want to open this	super secret  *', 0Dh, 0Ah, '*		     and    +
+     98	      2A 2A 2A 2A 2A 2A	2A+  COOL		   *', 0Dh, 0Ah,'* program, you	should enter the password! *', 0Dh, 0Ah, '* +
+     99	      2A 2A 2A 2A 2A 2A	2A+  *', 0Dh, 0Ah,'*******************************************', 0Dh, 0Ah, '$'
+    100	      2A 2A 2A 2A 2A 2A	2A+
+    101	      2A 2A 2A 2A 2A 2A	2A+
+    102	      2A 0D 0A 2A 20 20	20+
+    103	      20 20 20 20 20 20	20+
+    104	      20 20 20 20 20 20	20+
+    105	      20 20 20 20 20 20	20+
+    106	      20 20 20 20 20 20	20+
+    107	      20 20 20 20 20 20	20+
+    108	      20 20 20 2A 0D 0A	2A+
+    109	      20 20 49 66 20 79	6F+
+    110	      75 20 77 61 6E 74	20+
+    111	      74 6F 20 6F 70 65	6E+
+    112	      20 74 68 69 73 20	73+
+    113	      75 70 65 72 20 73	65+
+    114	      63 72 65 74 20 20	2A+
+Turbo Assembler	 Version 4.1	    02/27/25 15:38:44	    Page 3
+hack.asm
+
+
+
+    115	      0D 0A 2A 20 20 20	20+
+    116	      20 20 20 20 20 20	20+
+    117	      20 20 20 20 61 6E	64+
+    118	      20 43 4F 4F 4C 20	20+
+    119	      20 20 20 20 20 20	20+
+    120	      20 20 20 20 20 20	20+
+    121	      20 20 2A 0D 0A 2A	20+
+    122	      70 72 6F 67 72 61	6D+
+    123	      2C 20 79 6F 75 20	73+
+    124	      68 6F 75 6C 64 20	65+
+    125	      6E 74 65 72 20 74	68+
+    126	      65 20 70 61 73 73	77+
+    127	      6F 72 64 21 20 2A	0D+
+    128	      0A 2A 20 20 20 20	20+
+    129	      20 20 20 20 20 20	20+
+    130	      20 20 20 20 20 20	20+
+    131	      20 20 20 20 20 20	20+
+    132	      20 20 20 20 20 20	20+
+    133	      20 20 20 20 20 20	20+
+    134	      20 2A 0D 0A 2A 2A	2A+
+    135	      2A 2A 2A 2A 2A 2A	2A+
+    136	      2A 2A 2A 2A 2A 2A	2A+
+    137	      2A 2A 2A 2A 2A 2A	2A+
+    138	      2A 2A 2A 2A 2A 2A	2A+
+    139	      2A 2A 2A 2A 2A 2A	2A+
+    140	      2A 2A 2A 2A 2A 0D	0A+
+    141	      24
+    142	02BD  53 6F 2C 20 79 6F	75+  passrequest:    db	'So, you think password	is...$'
+    143	      20 74 68 69 6E 6B	20+
+    144	      70 61 73 73 77 6F	72+
+    145	      64 20 69 73 2E 2E	2E+
+    146	      24
+    147	02DA  0D 0A 24		     newstring:	     db	0Dh, 0Ah, '$'
+    148	02DD  59 45 50 21 21 20	59+  right:	     db	'YEP!! You are right It	s so cool, my man!$'
+    149	      6F 75 20 61 72 65	20+
+    150	      72 69 67 68 74 20	49+
+    151	      74 20 73 20 73 6F	20+
+    152	      63 6F 6F 6C 2C 20	6D+
+    153	      79 20 6D 61 6E 21	24
+    154	0307  4E 6F 2E 2E 2E 24	     wrong:	     db	'No...$'
+    155
+    156				     end	 start
+Turbo Assembler	 Version 4.1	    02/27/25 15:38:44	    Page 4
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/27/25"
+??FILENAME			  Text	 "hack	  "
+??TIME				  Text	 "15:38:44"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 HACK
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+DATA				  Near	 DGROUP:011C
+FULL				  Near	 DGROUP:0129
+GOODPASS			  Near	 DGROUP:0169
+GREETINGS			  Near	 DGROUP:0181
+HASHEND				  Near	 DGROUP:0153
+INTRO				  Near	 DGROUP:0174
+NEWSTRING			  Near	 DGROUP:02DA
+NEXT				  Near	 DGROUP:0133
+PASSREQUEST			  Near	 DGROUP:02BD
+PASSWORD			  Near	 DGROUP:0114
+RIGHT				  Near	 DGROUP:02DD
+START				  Near	 DGROUP:0100
+WRONG				  Near	 DGROUP:0307
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  030D Word	  Public  CODE
+
